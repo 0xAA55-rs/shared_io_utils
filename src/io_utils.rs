@@ -151,7 +151,7 @@ pub struct DishonestReader<T>
 where
     T: Read + Seek + Debug {
     reader: T,
-    on_read: Box<dyn FnMut(&mut T, usize) -> Result<Vec<u8>, io::Error>>,
+    on_read: Box<dyn FnMut(&mut T, usize) -> io::Result<Vec<u8>>>,
     on_seek: Box<dyn FnMut(&mut T, SeekFrom) -> io::Result<u64>>,
     cache: Vec<u8>,
 }
@@ -161,7 +161,7 @@ where
     T: Read + Seek + Debug {
     pub fn new(
         reader: T,
-        on_read: Box<dyn FnMut(&mut T, usize) -> Result<Vec<u8>, io::Error>>,
+        on_read: Box<dyn FnMut(&mut T, usize) -> io::Result<Vec<u8>>>,
         on_seek: Box<dyn FnMut(&mut T, SeekFrom) -> io::Result<u64>>,
     ) -> Self {
         Self {
@@ -214,7 +214,7 @@ where
         let typename = type_name::<T>();
         f.debug_struct(&format!("DishonestReader<{typename}>"))
         .field("reader", &self.reader)
-        .field("on_read", &format_args!("Box<dyn FnMut(&mut T, usize) -> Result<Vec<u8>, io::Error>>"))
+        .field("on_read", &format_args!("Box<dyn FnMut(&mut T, usize) -> io::Result<Vec<u8>>>"))
         .field("on_seek", &format_args!("Box<dyn FnMut(&mut T, SeekFrom) -> io::Result<u64>>"))
         .field("cache", &format_args!("[u8; {}]", self.cache.len()))
         .finish()
@@ -1091,7 +1091,7 @@ pub mod string_io {
     use std::io::{self, Read, Write};
 
     /// * Read some bytes, and return the bytes, without you to create a local `vec![0u8; size]` and scratch your head with the messy codes
-    pub fn read_bytes<T: Read>(r: &mut T, size: usize) -> Result<Vec<u8>, io::Error> {
+    pub fn read_bytes<T: Read>(r: &mut T, size: usize) -> io::Result<Vec<u8>> {
         let mut buf = vec![0u8; size];
         r.read_exact(&mut buf)?;
         Ok(buf)
@@ -1102,7 +1102,7 @@ pub mod string_io {
         r: &mut T,
         size: usize,
         text_encoding: &StringCodecMaps,
-    ) -> Result<String, io::Error> {
+    ) -> io::Result<String> {
         let mut buf = vec![0u8; size];
         r.read_exact(&mut buf)?;
         Ok(text_encoding
@@ -1117,7 +1117,7 @@ pub mod string_io {
         size: usize,
         text_encoding: &StringCodecMaps,
         code_page: u32,
-    ) -> Result<String, io::Error> {
+    ) -> io::Result<String> {
         let mut buf = vec![0u8; size];
         r.read_exact(&mut buf)?;
         Ok(text_encoding
@@ -1127,7 +1127,7 @@ pub mod string_io {
     }
 
     /// * Read a NUL terminated string by raw, not decode it.
-    pub fn read_sz_raw<T: Read>(r: &mut T) -> Result<Vec<u8>, io::Error> {
+    pub fn read_sz_raw<T: Read>(r: &mut T) -> io::Result<Vec<u8>> {
         let mut buf = Vec::<u8>::new();
         loop {
             let b = [0u8; 1];
@@ -1146,7 +1146,7 @@ pub mod string_io {
     pub fn read_sz<T: Read>(
         r: &mut T,
         text_encoding: &StringCodecMaps,
-    ) -> Result<String, io::Error> {
+    ) -> io::Result<String> {
         Ok(text_encoding
             .decode(&read_sz_raw(r)?)
             .trim_matches(char::from(0))
@@ -1158,7 +1158,7 @@ pub mod string_io {
         r: &mut T,
         text_encoding: &StringCodecMaps,
         code_page: u32,
-    ) -> Result<String, io::Error> {
+    ) -> io::Result<String> {
         Ok(text_encoding
             .decode_bytes_by_code_page(&read_sz_raw(r)?, code_page)
             .trim_matches(char::from(0))

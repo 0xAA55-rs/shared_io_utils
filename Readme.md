@@ -41,7 +41,7 @@ pub struct DishonestReader<T>
 where
     T: Read + Seek + Debug {
     reader: T,
-    on_read: Box<dyn FnMut(&mut T, usize) -> Result<Vec<u8>, io::Error>>,
+    on_read: Box<dyn FnMut(&mut T, usize) -> io::Result<Vec<u8>>>,
     on_seek: Box<dyn FnMut(&mut T, SeekFrom) -> io::Result<u64>>,
     cache: Vec<u8>,
 }
