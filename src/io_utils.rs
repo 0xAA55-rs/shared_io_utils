@@ -337,6 +337,13 @@ impl CursorVecU8 {
         self.0.get_ref().len()
     }
 
+    pub fn set_len(&mut self, len: usize) {
+        self.0.get_mut().resize(len, 0);
+        if self.0.position() > len as u64 {
+            self.0.set_position(len as u64);
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         self.0.get_ref().is_empty()
     }
